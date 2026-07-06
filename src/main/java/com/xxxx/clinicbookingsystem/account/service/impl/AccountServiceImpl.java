@@ -9,7 +9,6 @@ import com.xxxx.clinicbookingsystem.common.exception.AppException;
 import com.xxxx.clinicbookingsystem.common.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,7 +22,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public List<AccountResponse> getAllAccounts() {
-        List<Account> accounts = accountRepository.findAll();
+        List<Account> accounts = accountRepository.findAllWithRole();
         return accounts.stream()
                 .map(accountMapper::toResponse
                 )
