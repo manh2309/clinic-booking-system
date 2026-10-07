@@ -1,6 +1,10 @@
 spring:
   application:
     name: clinic-booking-system
+  jpa:
+    open-in-view: false
+  flyway:
+    enabled: true
 
 security:
   jwt:
@@ -8,4 +12,13 @@ security:
     expiration-ms: ${JWT_EXPIRATION_MS:1800000}
 
 server:
-  port: 8080
+  port: 9000
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  bootstrap:
+    admin:
+      username: ${BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      email: ${BOOTSTRAP_ADMIN_EMAIL:}

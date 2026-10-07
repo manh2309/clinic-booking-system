@@ -1,15 +1,13 @@
 package com.xxxx.clinicbookingsystem.auth.controller;
 
 import com.xxxx.clinicbookingsystem.account.dto.AccountResponse;
-import com.xxxx.clinicbookingsystem.auth.dto.AccountRegisterRequest;
-import com.xxxx.clinicbookingsystem.auth.dto.LoginRequest;
+import com.xxxx.clinicbookingsystem.auth.dto.request.AccountRegisterRequest;
+import com.xxxx.clinicbookingsystem.auth.dto.request.LoginRequest;
+import com.xxxx.clinicbookingsystem.auth.dto.response.AuthenticationResponse;
 import com.xxxx.clinicbookingsystem.auth.service.AuthenticationService;
 import com.xxxx.clinicbookingsystem.common.response.ApiResponse;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,7 +23,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<AccountResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ApiResponse<AuthenticationResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(authenticationService.login(request));
     }
 }

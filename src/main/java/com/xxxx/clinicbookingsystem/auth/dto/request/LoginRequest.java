@@ -1,4 +1,4 @@
-package com.xxxx.clinicbookingsystem.auth.dto;
+package com.xxxx.clinicbookingsystem.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

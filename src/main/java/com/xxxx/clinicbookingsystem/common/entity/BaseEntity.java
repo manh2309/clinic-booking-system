@@ -34,6 +34,4 @@ public abstract class BaseEntity {
     @Column(name = "last_modified_date")
     private LocalDateTime lastModifiedDate;
 
-    @Column(name = "is_deleted")
-    private Boolean isDeleted = false;
 }
