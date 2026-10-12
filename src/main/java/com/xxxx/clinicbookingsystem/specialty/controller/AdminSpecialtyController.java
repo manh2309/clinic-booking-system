@@ -4,6 +4,7 @@ import com.xxxx.clinicbookingsystem.common.response.ApiResponse;
 import com.xxxx.clinicbookingsystem.specialty.dto.CreateSpecialtyRequest;
 import com.xxxx.clinicbookingsystem.specialty.dto.SpecialtyResponse;
 import com.xxxx.clinicbookingsystem.specialty.dto.UpdateSpecialtyRequest;
+import com.xxxx.clinicbookingsystem.specialty.dto.UpdateSpecialtyStatusRequest;
 import com.xxxx.clinicbookingsystem.specialty.service.SpecialtyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,5 +28,12 @@ public class AdminSpecialtyController {
         return ApiResponse.success(service.update(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    public ApiResponse<Void> updateStatus(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UpdateSpecialtyStatusRequest request) {
+        service.updateStatus(id, request);
+        return ApiResponse.success();
+    }
 
 }

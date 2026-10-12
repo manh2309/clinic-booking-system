@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
+    boolean existsBySpecialty_IdAndActiveTrue(Long specialtyId);
+
     @Query(value = "SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.active = true " +
             "AND (:specialtyId IS NULL OR d.specialty.id = :specialtyId) " +
             "AND (:keyword IS NULL OR LOWER(d.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))",

@@ -37,11 +37,17 @@ public class AppointmentService {
                 || !Boolean.TRUE.equals(slot.getSchedule().getActive())) {
             throw new AppException(ErrorCode.SLOT_ALREADY_BOOKED);
         }
+        Doctor doctor = slot.getDoctor();
+        if (!Boolean.TRUE.equals(doctor.getActive())
+                || !Boolean.TRUE.equals(doctor.getAccount().getIsActive())
+                || !Boolean.TRUE.equals(doctor.getSpecialty().getActive())) {
+            throw new AppException(ErrorCode.DOCTOR_NOT_AVAILABLE);
+        }
         Account patient = accountRepository.findById(currentAccount.id())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         Appointment appointment = new Appointment();
         appointment.setPatient(patient);
-        appointment.setDoctor(slot.getDoctor());
+        appointment.setDoctor(doctor);
         appointment.setSlot(slot);
         appointment.setStatus(AppointmentStatus.PENDING);
         slot.setStatus(SlotStatus.BOOKED);

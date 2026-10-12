@@ -1,13 +1,17 @@
 package com.xxxx.clinicbookingsystem.appointment.repository;
 
 import com.xxxx.clinicbookingsystem.appointment.entity.Appointment;
+import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.*;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+    boolean existsByDoctor_IdAndStatusIn(Long doctorId, Collection<AppointmentStatus> statuses);
+
     @Query(value = "SELECT a FROM Appointment a JOIN FETCH a.doctor JOIN FETCH a.slot WHERE a.patient.id = :patientId",
             countQuery = "SELECT COUNT(a) FROM Appointment a WHERE a.patient.id = :patientId")
     Page<Appointment> findPatientAppointments(Long patientId, Pageable pageable);

@@ -4,6 +4,7 @@ import com.xxxx.clinicbookingsystem.account.entity.Account;
 import com.xxxx.clinicbookingsystem.account.repository.AccountRepository;
 import com.xxxx.clinicbookingsystem.appointment.dto.*;
 import com.xxxx.clinicbookingsystem.appointment.service.AppointmentService;
+import com.xxxx.clinicbookingsystem.appointment.repository.AppointmentRepository;
 import com.xxxx.clinicbookingsystem.auth.security.CustomUserDetails;
 import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
 import com.xxxx.clinicbookingsystem.common.exception.*;
@@ -13,9 +14,13 @@ import com.xxxx.clinicbookingsystem.role.entity.Role;
 import com.xxxx.clinicbookingsystem.role.repository.RoleRepository;
 import com.xxxx.clinicbookingsystem.schedule.dto.*;
 import com.xxxx.clinicbookingsystem.schedule.service.ScheduleService;
+import com.xxxx.clinicbookingsystem.schedule.entity.SlotStatus;
+import com.xxxx.clinicbookingsystem.schedule.repository.ScheduleSlotRepository;
 import com.xxxx.clinicbookingsystem.specialty.entity.Specialty;
 import com.xxxx.clinicbookingsystem.specialty.repository.SpecialtyRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +41,68 @@ class BookingFlowIntegrationTests {
     @Autowired RoleRepository roleRepository;
     @Autowired SpecialtyRepository specialtyRepository;
     @Autowired DoctorRepository doctorRepository;
+    @Autowired AppointmentRepository appointmentRepository;
+    @Autowired ScheduleSlotRepository slotRepository;
+
+    @ParameterizedTest
+    @CsvSource({
+            "false, true, true",
+            "true, false, true",
+            "true, true, false",
+            "true, true, true"
+    })
+    void bookingChecksDoctorAvailabilityAndPersistsOnlyOnSuccess(
+            boolean doctorActive, boolean accountActive, boolean specialtyActive) {
+        String suffix = doctorActive + "_" + accountActive + "_" + specialtyActive;
+        Account doctorAccount = account("availability_doctor_" + suffix,
+                roleRepository.findByRoleName("DOCTOR").orElseThrow());
+        Account patient = account("availability_patient_" + suffix,
+                roleRepository.findByRoleName("PATIENT").orElseThrow());
+        Specialty specialty = new Specialty();
+        specialty.setName("Availability " + suffix);
+        specialty = specialtyRepository.save(specialty);
+        Doctor doctor = new Doctor();
+        doctor.setAccount(doctorAccount);
+        doctor.setSpecialty(specialty);
+        doctor.setFullName("Doctor Availability");
+        doctor = doctorRepository.save(doctor);
+
+        try {
+            authenticate(doctorAccount);
+            LocalDateTime start = LocalDateTime.now().plusDays(3)
+                    .withHour(9).withMinute(0).withSecond(0).withNano(0);
+            Long slotId = scheduleService.create(new CreateScheduleRequest(start, start.plusMinutes(30)))
+                    .slots().get(0).id();
+            doctor.setActive(doctorActive);
+            doctorRepository.saveAndFlush(doctor);
+            doctorAccount.setIsActive(accountActive);
+            accountRepository.saveAndFlush(doctorAccount);
+            specialty.setActive(specialtyActive);
+            specialtyRepository.saveAndFlush(specialty);
+
+            authenticate(patient);
+            long appointmentsBefore = appointmentRepository.count();
+            if (doctorActive && accountActive && specialtyActive) {
+                AppointmentResponse response = appointmentService.book(new CreateAppointmentRequest(slotId));
+                assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+                assertThat(appointmentRepository.count()).isEqualTo(appointmentsBefore + 1);
+                assertThat(appointmentRepository.findById(response.id()).orElseThrow().getStatus())
+                        .isEqualTo(AppointmentStatus.PENDING);
+                assertThat(slotRepository.findById(slotId).orElseThrow().getStatus()).isEqualTo(SlotStatus.BOOKED);
+            } else {
+                assertThatThrownBy(() -> appointmentService.book(new CreateAppointmentRequest(slotId)))
+                        .isInstanceOfSatisfying(AppException.class, error -> {
+                            assertThat(error.getErrorCode()).isEqualTo(ErrorCode.DOCTOR_NOT_AVAILABLE);
+                            assertThat(error.getErrorCode().getCode()).isEqualTo(2007);
+                            assertThat(error.getErrorCode().getHttpStatus().value()).isEqualTo(409);
+                        });
+                assertThat(appointmentRepository.count()).isEqualTo(appointmentsBefore);
+                assertThat(slotRepository.findById(slotId).orElseThrow().getStatus()).isEqualTo(SlotStatus.AVAILABLE);
+            }
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
 
     @Test
     void completeBookingFlowAndPreventDuplicateSlot() {

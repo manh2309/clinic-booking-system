@@ -2,9 +2,11 @@ package com.xxxx.clinicbookingsystem.specialty.service;
 
 import com.xxxx.clinicbookingsystem.common.exception.AppException;
 import com.xxxx.clinicbookingsystem.common.exception.ErrorCode;
+import com.xxxx.clinicbookingsystem.doctor.repository.DoctorRepository;
 import com.xxxx.clinicbookingsystem.specialty.dto.CreateSpecialtyRequest;
 import com.xxxx.clinicbookingsystem.specialty.dto.SpecialtyResponse;
 import com.xxxx.clinicbookingsystem.specialty.dto.UpdateSpecialtyRequest;
+import com.xxxx.clinicbookingsystem.specialty.dto.UpdateSpecialtyStatusRequest;
 import com.xxxx.clinicbookingsystem.specialty.entity.Specialty;
 import com.xxxx.clinicbookingsystem.specialty.repository.SpecialtyRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SpecialtyService {
     private final SpecialtyRepository repository;
+    private final DoctorRepository doctorRepository;
 
     @Transactional(readOnly = true)
     public List<SpecialtyResponse> findAll() {
@@ -50,6 +53,24 @@ public class SpecialtyService {
         Specialty saveSpecialty = repository.save(specialty);
         return toResponse(saveSpecialty);
     }
+
+    @Transactional
+    public void updateStatus(Long id, UpdateSpecialtyStatusRequest request) {
+        Specialty specialty = repository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
+
+        if (specialty.getActive().equals(request.active())) {
+            return;
+        }
+
+        if (Boolean.FALSE.equals(request.active())
+                && doctorRepository.existsBySpecialty_IdAndActiveTrue(id)) {
+            throw new AppException(ErrorCode.SPECIALTY_HAS_ACTIVE_DOCTORS);
+        }
+
+        specialty.setActive(request.active());
+    }
+
     private SpecialtyResponse toResponse(Specialty specialty) {
         return new SpecialtyResponse(specialty.getId(), specialty.getName(), specialty.getDescription());
     }

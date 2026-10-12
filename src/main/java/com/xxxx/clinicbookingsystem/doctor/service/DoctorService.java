@@ -2,6 +2,8 @@ package com.xxxx.clinicbookingsystem.doctor.service;
 
 import com.xxxx.clinicbookingsystem.account.entity.Account;
 import com.xxxx.clinicbookingsystem.account.repository.AccountRepository;
+import com.xxxx.clinicbookingsystem.appointment.repository.AppointmentRepository;
+import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
 import com.xxxx.clinicbookingsystem.common.exception.AppException;
 import com.xxxx.clinicbookingsystem.common.exception.ErrorCode;
 import com.xxxx.clinicbookingsystem.common.response.PageResponse;
@@ -18,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
@@ -26,6 +30,7 @@ public class DoctorService {
     private final RoleRepository roleRepository;
     private final SpecialtyService specialtyService;
     private final PasswordEncoder passwordEncoder;
+    private final AppointmentRepository appointmentRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<DoctorResponse> search(Long specialtyId, String keyword, int page, int size) {
@@ -63,6 +68,49 @@ public class DoctorService {
         doctor.setQualification(request.qualification());
         doctor.setDescription(request.description());
         return toResponse(repository.save(doctor));
+    }
+
+    @Transactional
+    public DoctorResponse update(Long id, UpdateDoctorRequest request) {
+        Doctor doctor = repository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+
+        String fullName = request.fullName().trim();
+        if (fullName.length() < 4) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        Specialty specialty = specialtyService.getActive(request.specialtyId());
+        doctor.setFullName(fullName);
+        doctor.setQualification(request.qualification());
+        doctor.setDescription(request.description());
+        doctor.setSpecialty(specialty);
+
+        return toResponse(doctor);
+    }
+
+    @Transactional
+    public void updateStatus(Long id, UpdateDoctorStatusRequest request) {
+        Doctor doctor = repository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+
+        if (doctor.getActive().equals(request.active())) {
+            return;
+        }
+
+        if (Boolean.FALSE.equals(request.active())) {
+            boolean hasPendingAppointments = appointmentRepository.existsByDoctor_IdAndStatusIn(
+                    id,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+            );
+            if (hasPendingAppointments) {
+                throw new AppException(ErrorCode.DOCTOR_HAS_PENDING_APPOINTMENTS);
+            }
+        } else {
+            specialtyService.getActive(doctor.getSpecialty().getId());
+        }
+
+        doctor.setActive(request.active());
     }
 
     public Doctor getActive(Long id) {
