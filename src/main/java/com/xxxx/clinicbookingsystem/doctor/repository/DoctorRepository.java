@@ -28,4 +28,14 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT d FROM Doctor d WHERE d.account.id = :accountId AND d.active = true")
     Optional<Doctor> lockByAccountId(Long accountId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT d FROM Doctor d WHERE d.id = :id")
+    Optional<Doctor> lockById(@Param("id") Long id);
+
+    @Query(
+            value = "SELECT d FROM Doctor d JOIN FETCH d.specialty",
+            countQuery = "SELECT COUNT(d) FROM Doctor d"
+    )
+    Page<Doctor> findAllForAdmin(Pageable pageable);
 }

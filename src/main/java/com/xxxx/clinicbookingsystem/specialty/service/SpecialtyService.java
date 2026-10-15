@@ -72,6 +72,14 @@ public class SpecialtyService {
     }
 
     private SpecialtyResponse toResponse(Specialty specialty) {
-        return new SpecialtyResponse(specialty.getId(), specialty.getName(), specialty.getDescription());
+        return new SpecialtyResponse(specialty.getId(), specialty.getName(), specialty.getDescription(),
+                specialty.getActive());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SpecialtyResponse> findAllForAdmin() {
+        return repository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 }

@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/admin/specialties")
 @RequiredArgsConstructor
@@ -34,6 +36,11 @@ public class AdminSpecialtyController {
             @Valid @RequestBody UpdateSpecialtyStatusRequest request) {
         service.updateStatus(id, request);
         return ApiResponse.success();
+    }
+
+    @GetMapping()
+    public ApiResponse<List<SpecialtyResponse>> findAllForAdmin() {
+        return ApiResponse.success(service.findAllForAdmin());
     }
 
 }

@@ -1,9 +1,11 @@
 package com.xxxx.clinicbookingsystem.doctor.controller;
 
 import com.xxxx.clinicbookingsystem.common.response.ApiResponse;
+import com.xxxx.clinicbookingsystem.common.response.PageResponse;
 import com.xxxx.clinicbookingsystem.doctor.dto.*;
 import com.xxxx.clinicbookingsystem.doctor.service.DoctorService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -33,5 +35,13 @@ public class AdminDoctorController {
             @Valid @RequestBody UpdateDoctorStatusRequest request) {
         service.updateStatus(id, request);
         return ApiResponse.success();
+    }
+
+    @GetMapping
+    public ApiResponse<PageResponse<DoctorResponse>> findAllForAdmin(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size
+    ) {
+        return ApiResponse.success(service.findAllForAdmin(page, size));
     }
 }

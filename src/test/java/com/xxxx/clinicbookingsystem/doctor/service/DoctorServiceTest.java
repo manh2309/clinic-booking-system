@@ -121,7 +121,7 @@ class DoctorServiceTest {
 
     @Test
     void updateStatusThrowsWhenDoctorDoesNotExist() {
-        when(doctorRepository.findById(99L)).thenReturn(Optional.empty());
+        when(doctorRepository.lockById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.updateStatus(99L, new UpdateDoctorStatusRequest(false)))
                 .isInstanceOfSatisfying(AppException.class,
@@ -131,7 +131,7 @@ class DoctorServiceTest {
     @Test
     void updateStatusReturnsWithoutFurtherChecksWhenStatusIsUnchanged() {
         Doctor doctor = doctor(false);
-        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(doctorRepository.lockById(1L)).thenReturn(Optional.of(doctor));
 
         service.updateStatus(1L, new UpdateDoctorStatusRequest(false));
 
@@ -145,7 +145,7 @@ class DoctorServiceTest {
     @Test
     void updateStatusRejectsDeactivationWhenUnresolvedAppointmentExists() {
         Doctor doctor = doctor(true);
-        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(doctorRepository.lockById(1L)).thenReturn(Optional.of(doctor));
         when(appointmentRepository.existsByDoctor_IdAndStatusIn(1L, of(
                 AppointmentStatus.PENDING,
                 AppointmentStatus.CONFIRMED
@@ -161,7 +161,7 @@ class DoctorServiceTest {
     @Test
     void updateStatusDeactivatesDoctorWithoutUnresolvedAppointments() {
         Doctor doctor = doctor(true);
-        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(doctorRepository.lockById(1L)).thenReturn(Optional.of(doctor));
         when(appointmentRepository.existsByDoctor_IdAndStatusIn(1L, of(
                 AppointmentStatus.PENDING,
                 AppointmentStatus.CONFIRMED
@@ -175,7 +175,7 @@ class DoctorServiceTest {
     @Test
     void updateStatusOnlyReactivatesDoctorWhenSpecialtyIsActive() {
         Doctor doctor = doctor(false);
-        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(doctorRepository.lockById(1L)).thenReturn(Optional.of(doctor));
         when(specialtyService.getActive(1L)).thenThrow(new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
 
         assertThatThrownBy(() -> service.updateStatus(1L, new UpdateDoctorStatusRequest(true)))

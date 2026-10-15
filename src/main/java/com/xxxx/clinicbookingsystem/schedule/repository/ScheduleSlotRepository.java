@@ -3,6 +3,7 @@ package com.xxxx.clinicbookingsystem.schedule.repository;
 import com.xxxx.clinicbookingsystem.schedule.entity.*;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,4 +17,7 @@ public interface ScheduleSlotRepository extends JpaRepository<ScheduleSlot, Long
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM ScheduleSlot s JOIN FETCH s.doctor WHERE s.id = :id")
     Optional<ScheduleSlot> lockById(Long id);
+
+    @Query("SELECT s.doctor.id FROM ScheduleSlot s WHERE s.id = :slotId")
+    Optional<Long> findDoctorIdBySlotId(@Param("slotId") Long slotId);
 }

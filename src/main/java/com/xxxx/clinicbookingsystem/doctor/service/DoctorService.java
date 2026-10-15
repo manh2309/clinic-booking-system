@@ -16,6 +16,7 @@ import com.xxxx.clinicbookingsystem.specialty.entity.Specialty;
 import com.xxxx.clinicbookingsystem.specialty.service.SpecialtyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,7 +92,7 @@ public class DoctorService {
 
     @Transactional
     public void updateStatus(Long id, UpdateDoctorStatusRequest request) {
-        Doctor doctor = repository.findById(id)
+        Doctor doctor = repository.lockById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
 
         if (doctor.getActive().equals(request.active())) {
@@ -122,8 +123,22 @@ public class DoctorService {
         return repository.findByAccountIdAndActiveTrue(accountId).orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<DoctorResponse> findAllForAdmin(int page, int size) {
+        var pageable = PageRequest.of(
+                page,
+                Math.min(size, 100),
+                Sort.by("id").ascending()
+        );
+
+        return PageResponse.from(
+                repository.findAllForAdmin(pageable)
+                        .map(this::toResponse)
+        );
+    }
+
     private DoctorResponse toResponse(Doctor doctor) {
         return new DoctorResponse(doctor.getId(), doctor.getFullName(), doctor.getQualification(), doctor.getDescription(),
-                doctor.getSpecialty().getId(), doctor.getSpecialty().getName());
+                doctor.getSpecialty().getId(), doctor.getSpecialty().getName(), doctor.getActive());
     }
 }

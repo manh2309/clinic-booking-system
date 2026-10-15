@@ -14,4 +14,5 @@ public class AccountResponse {
     private String username;
     private String email;
     private String roleName;
+    private Boolean isActive;
 }

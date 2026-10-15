@@ -2,23 +2,32 @@ package com.xxxx.clinicbookingsystem.appointment.service;
 
 import com.xxxx.clinicbookingsystem.account.entity.Account;
 import com.xxxx.clinicbookingsystem.account.repository.AccountRepository;
-import com.xxxx.clinicbookingsystem.appointment.dto.*;
+import com.xxxx.clinicbookingsystem.appointment.dto.AppointmentResponse;
+import com.xxxx.clinicbookingsystem.appointment.dto.CreateAppointmentRequest;
+import com.xxxx.clinicbookingsystem.appointment.dto.UpdateAppointmentStatusRequest;
 import com.xxxx.clinicbookingsystem.appointment.entity.Appointment;
 import com.xxxx.clinicbookingsystem.appointment.repository.AppointmentRepository;
 import com.xxxx.clinicbookingsystem.auth.security.CurrentAccount;
 import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
-import com.xxxx.clinicbookingsystem.common.exception.*;
+import com.xxxx.clinicbookingsystem.common.exception.AppException;
+import com.xxxx.clinicbookingsystem.common.exception.ErrorCode;
 import com.xxxx.clinicbookingsystem.common.response.PageResponse;
 import com.xxxx.clinicbookingsystem.doctor.entity.Doctor;
+import com.xxxx.clinicbookingsystem.doctor.repository.DoctorRepository;
 import com.xxxx.clinicbookingsystem.doctor.service.DoctorService;
-import com.xxxx.clinicbookingsystem.schedule.entity.*;
+import com.xxxx.clinicbookingsystem.patient.repository.PatientProfileRepository;
+import com.xxxx.clinicbookingsystem.schedule.entity.ScheduleSlot;
+import com.xxxx.clinicbookingsystem.schedule.entity.SlotStatus;
 import com.xxxx.clinicbookingsystem.schedule.repository.ScheduleSlotRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,17 +36,25 @@ public class AppointmentService {
     private final ScheduleSlotRepository slotRepository;
     private final AccountRepository accountRepository;
     private final DoctorService doctorService;
+    private final DoctorRepository doctorRepository;
     private final CurrentAccount currentAccount;
+    private final PatientProfileRepository patientProfileRepository;
 
     @Transactional
     public AppointmentResponse book(CreateAppointmentRequest request) {
+        Long doctorId = slotRepository.findDoctorIdBySlotId(request.slotId())
+                .orElseThrow(() -> new AppException(ErrorCode.SLOT_NOT_FOUND));
+
+        Doctor doctor = doctorRepository.lockById(doctorId)
+                .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+
         ScheduleSlot slot = slotRepository.lockById(request.slotId())
                 .orElseThrow(() -> new AppException(ErrorCode.SLOT_NOT_FOUND));
         if (slot.getStatus() != SlotStatus.AVAILABLE || !slot.getStartAt().isAfter(LocalDateTime.now())
                 || !Boolean.TRUE.equals(slot.getSchedule().getActive())) {
             throw new AppException(ErrorCode.SLOT_ALREADY_BOOKED);
         }
-        Doctor doctor = slot.getDoctor();
+
         if (!Boolean.TRUE.equals(doctor.getActive())
                 || !Boolean.TRUE.equals(doctor.getAccount().getIsActive())
                 || !Boolean.TRUE.equals(doctor.getSpecialty().getActive())) {
@@ -56,8 +73,8 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public PageResponse<AppointmentResponse> mine(int page, int size) {
-        return PageResponse.from(repository.findPatientAppointments(currentAccount.id(),
-                PageRequest.of(page, Math.min(size, 100))).map(this::toResponse));
+        var appointment = repository.findPatientAppointments(currentAccount.id(), PageRequest.of(page, Math.min(size, 100)));
+        return toPageResponse(appointment);
     }
 
     @Transactional
@@ -77,8 +94,8 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public PageResponse<AppointmentResponse> doctorAppointments(int page, int size) {
         Doctor doctor = doctorService.getByAccountId(currentAccount.id());
-        return PageResponse.from(repository.findDoctorAppointments(doctor.getId(),
-                PageRequest.of(page, Math.min(size, 100))).map(this::toResponse));
+        var appointments = repository.findDoctorAppointments(doctor.getId(), PageRequest.of(page, Math.min(size, 100)));
+        return toPageResponse(appointments);
     }
 
     @Transactional
@@ -96,8 +113,68 @@ public class AppointmentService {
     }
 
     private AppointmentResponse toResponse(Appointment appointment) {
-        return new AppointmentResponse(appointment.getId(), appointment.getStatus(), appointment.getDoctor().getId(),
-                appointment.getDoctor().getFullName(), appointment.getPatient().getId(),
-                appointment.getSlot().getStartAt(), appointment.getSlot().getEndAt());
+        Account patient = appointment.getPatient();
+
+        String patientFullName = patientProfileRepository
+                .findByAccount_Id(patient.getId())
+                .map(profile -> profile.getFullName())
+                .filter(name -> name != null && !name.isBlank())
+                .orElse(patient.getUsername());
+
+        return toResponse(appointment, patientFullName);
+    }
+
+    private AppointmentResponse toResponse(
+            Appointment appointment,
+            String patientFullName) {
+
+        Account patient = appointment.getPatient();
+
+        return new AppointmentResponse(
+                appointment.getId(),
+                appointment.getStatus(),
+                appointment.getDoctor().getId(),
+                appointment.getDoctor().getFullName(),
+                patient.getId(),
+                appointment.getSlot().getStartAt(),
+                appointment.getSlot().getEndAt(),
+                patientFullName,
+                patient.getPhone()
+        );
+    }
+
+    private PageResponse<AppointmentResponse> toPageResponse(
+            Page<Appointment> appointments) {
+
+        var accountIds = appointments.getContent().stream()
+                .map(appointment -> appointment.getPatient().getId())
+                .distinct()
+                .toList();
+
+        Map<Long, String> patientNames = new HashMap<>();
+
+        if (!accountIds.isEmpty()) {
+            var profiles = patientProfileRepository
+                    .findAllByAccount_IdIn(accountIds);
+
+            for (var profile : profiles) {
+                String name = profile.getFullName();
+
+                if (name != null && !name.isBlank()) {
+                    patientNames.put(profile.getAccount().getId(), name);
+                }
+            }
+        }
+
+        return PageResponse.from(appointments.map(appointment -> {
+            Account patient = appointment.getPatient();
+
+            String name = patientNames.getOrDefault(
+                    patient.getId(),
+                    patient.getUsername()
+            );
+
+            return toResponse(appointment, name);
+        }));
     }
 }

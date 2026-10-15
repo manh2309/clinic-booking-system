@@ -11,7 +11,8 @@ public class AccountMapper {
                 account.getId(),
                 account.getUsername(),
                 account.getEmail(),
-                account.getRole().getRoleName()
+                account.getRole().getRoleName(),
+                account.getIsActive()
         );
     }
 }
