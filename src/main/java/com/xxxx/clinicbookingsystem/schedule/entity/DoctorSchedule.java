@@ -32,6 +32,9 @@ public class DoctorSchedule extends BaseEntity {
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
+    @Column(name = "weekly_schedule_id")
+    private Long weeklyScheduleId;
+
     @Column(nullable = false)
     private Boolean active = true;
 

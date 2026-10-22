@@ -16,9 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ScheduleController {
     private final ScheduleService service;
+    private final java.time.Clock clock;
 
     @PostMapping("/api/v1/doctors/me/schedules")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("denyAll()")
     public ApiResponse<ScheduleResponse> create(@Valid @RequestBody CreateScheduleRequest request) {
         return ApiResponse.success(service.create(request));
     }
@@ -30,7 +31,7 @@ public class ScheduleController {
     }
 
     @DeleteMapping("/api/v1/doctors/me/schedules/{id}")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize("denyAll()")
     public ApiResponse<Void> deactivate(@PathVariable Long id) {
         service.deactivate(id);
         return ApiResponse.success();
@@ -40,5 +41,18 @@ public class ScheduleController {
     public ApiResponse<List<SlotResponse>> availableSlots(@PathVariable Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ApiResponse.success(service.availableSlots(doctorId, date));
+    }
+
+    @GetMapping("/api/v1/doctors/{doctorId}/available-dates")
+    public ApiResponse<List<AvailableDateResponse>> availableDates(@PathVariable Long doctorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(defaultValue = "30") int days) {
+        return ApiResponse.success(service.availableDates(doctorId, from == null ? LocalDate.now(clock) : from, days));
+    }
+
+    @PatchMapping("/api/v1/doctors/me/schedules/{id}/restore")
+    @PreAuthorize("denyAll()")
+    public ApiResponse<ScheduleResponse> restore(@PathVariable Long id) {
+        return ApiResponse.success(service.restore(id));
     }
 }

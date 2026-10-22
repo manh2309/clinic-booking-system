@@ -115,12 +115,27 @@ public class DoctorService {
     }
 
     public Doctor getActive(Long id) {
-        return repository.findById(id).filter(d -> Boolean.TRUE.equals(d.getActive()))
+        Doctor doctor = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+        requireAvailable(doctor);
+        return doctor;
     }
 
     public Doctor getByAccountId(Long accountId) {
-        return repository.findByAccountIdAndActiveTrue(accountId).orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+        return repository.findByAccountId(accountId).orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+    }
+
+    public void requireAvailable(Doctor doctor) {
+        if (!Boolean.TRUE.equals(doctor.getActive())
+                || !Boolean.TRUE.equals(doctor.getAccount().getIsActive())
+                || !Boolean.TRUE.equals(doctor.getSpecialty().getActive())) {
+            throw new AppException(ErrorCode.DOCTOR_NOT_AVAILABLE);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public DoctorResponse findByAccountId(Long accountId) {
+        return toResponse(getByAccountId(accountId));
     }
 
     @Transactional(readOnly = true)

@@ -33,7 +33,16 @@ public enum ErrorCode {
     SLOT_NOT_FOUND(3006, "Schedule slot not found", HttpStatus.NOT_FOUND),
     SLOT_ALREADY_BOOKED(3007, "Schedule slot is already booked", HttpStatus.CONFLICT),
     INVALID_APPOINTMENT_STATUS(3008, "Invalid appointment status transition", HttpStatus.BAD_REQUEST),
-    PATIENT_ACCOUNT_NOT_FOUND(4001, "Patient find by account not found", HttpStatus.NOT_FOUND);
+    PATIENT_SCHEDULE_CONFLICT(3009, "Bạn đã có lịch khám trùng thời gian", HttpStatus.CONFLICT),
+    SCHEDULE_RESTORE_REQUIRED(3010, "Khung giờ này thuộc ca đã hủy. Hãy khôi phục ca cũ", HttpStatus.CONFLICT),
+    LEAVE_NOT_FOUND(3011, "Không tìm thấy đơn nghỉ", HttpStatus.NOT_FOUND),
+    LEAVE_REVIEW_CONFLICT(3012, "Đơn đã xử lý hoặc có ca đang diễn ra. Hãy tải lại danh sách", HttpStatus.CONFLICT),
+    LEAVE_CANCELLATION_REQUIRED(3013, "Có lịch hẹn bị ảnh hưởng. Cần xác nhận hủy trước khi duyệt nghỉ", HttpStatus.CONFLICT),
+    WEEKLY_SCHEDULE_CONFLICT(3014, "Mẫu lịch trùng giờ hoặc vượt 8 giờ mỗi ngày", HttpStatus.CONFLICT),
+    PATIENT_ACCOUNT_NOT_FOUND(4001, "Patient find by account not found", HttpStatus.NOT_FOUND),
+    MEDICAL_RECORD_NOT_FOUND(5001, "Chưa có kết quả khám cho lịch hẹn này", HttpStatus.NOT_FOUND),
+    MEDICAL_RECORD_REQUIRED(5002, "Hãy lưu kết quả khám để hoàn thành lịch hẹn", HttpStatus.CONFLICT),
+    NOTIFICATION_NOT_FOUND(6001, "Không tìm thấy thông báo", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

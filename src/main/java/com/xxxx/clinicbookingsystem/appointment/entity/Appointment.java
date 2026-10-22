@@ -39,4 +39,7 @@ public class Appointment extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AppointmentStatus status = AppointmentStatus.PENDING;
+
+    @Column(name = "status_reason", length = 500)
+    private String statusReason;
 }

@@ -64,11 +64,13 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/swagger-ui.html"
                                 ).permitAll()
+                                .requestMatchers("/api/v1/doctors/me", "/api/v1/doctors/me/**").hasRole("DOCTOR")
                                 .requestMatchers(HttpMethod.GET,
                                         "/api/v1/specialties/**",
                                         "/api/v1/doctors",
                                         "/api/v1/doctors/*",
-                                        "/api/v1/doctors/*/available-slots").permitAll()
+                                        "/api/v1/doctors/*/available-slots",
+                                        "/api/v1/doctors/*/available-dates").permitAll()
                                 .requestMatchers("/api/v1/admin/**", "/api/v1/accounts/**", "/api/v1/roles/**", "/api/v1/admin/specialties/**").hasRole("ADMIN")
                                 .requestMatchers("/api/v1/patient/**").hasAnyRole("PATIENT")
                                 .anyRequest().authenticated()

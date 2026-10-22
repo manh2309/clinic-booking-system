@@ -1,6 +1,7 @@
 package com.xxxx.clinicbookingsystem.common.exception;
 
 import com.xxxx.clinicbookingsystem.common.response.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,6 +16,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.xxxx.clinicbookingsystem.schedule.planning.WeeklyBatchConflict.class)
+    public ResponseEntity<ApiResponse<Void>> handleWeeklyBatchConflict(
+            com.xxxx.clinicbookingsystem.schedule.planning.WeeklyBatchConflict exception) {
+        return ResponseEntity.status(409).body(ApiResponse.error(ErrorCode.WEEKLY_SCHEDULE_CONFLICT.getCode(), exception.getMessage()));
+    }
+
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException exception) {
         ErrorCode errorCode = exception.getErrorCode();
@@ -36,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({HandlerMethodValidationException.class, MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class})
+            HttpMessageNotReadableException.class, ConstraintViolationException.class})
     public ResponseEntity<ApiResponse<Void>> handleInvalidRequest(Exception exception) {
         ErrorCode error = ErrorCode.INVALID_REQUEST;
         return ResponseEntity.badRequest().body(ApiResponse.error(error.getCode(), error.getMessage()));

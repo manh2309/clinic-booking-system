@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
+import com.xxxx.clinicbookingsystem.auth.security.CurrentAccount;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/doctors")
@@ -15,6 +17,13 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class DoctorController {
     private final DoctorService service;
+    private final CurrentAccount currentAccount;
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ApiResponse<DoctorResponse> me() {
+        return ApiResponse.success(service.findByAccountId(currentAccount.id()));
+    }
 
     @GetMapping
     public ApiResponse<PageResponse<DoctorResponse>> search(@RequestParam(required = false) Long specialtyId,

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
+import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -27,8 +28,9 @@ public class AppointmentController {
     @GetMapping("/me")
     @PreAuthorize("hasRole('PATIENT')")
     public ApiResponse<PageResponse<AppointmentResponse>> mine(@RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        return ApiResponse.success(service.mine(page, size));
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) AppointmentStatus status) {
+        return ApiResponse.success(service.mine(page, size, status));
     }
 
     @PatchMapping("/{id}/cancel")

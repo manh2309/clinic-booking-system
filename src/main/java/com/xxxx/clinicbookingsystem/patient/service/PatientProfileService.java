@@ -26,7 +26,13 @@ public class PatientProfileService {
     public PatientProfileResponse myProfile() {
         Long accountId = currentAccount.id();
         PatientProfile patientProfile = patientProfileRepository.findByAccount_Id(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.PATIENT_ACCOUNT_NOT_FOUND));
+                .orElse(null);
+
+        if (patientProfile == null) {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+            return new PatientProfileResponse(null, null, null, null, account.getPhone(), account.getEmail(), null, accountId);
+        }
 
         return toResponse(patientProfile);
     }
@@ -34,10 +40,16 @@ public class PatientProfileService {
     @Transactional
     public void updateMyProfile(PatientProfileRequest request) {
         Long accountId = currentAccount.id();
+        // Khóa tài khoản để hai lần lưu đầu tiên không tạo hai hồ sơ cho cùng người.
+        Account account = accountRepository.lockById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         PatientProfile patientProfile = patientProfileRepository.findByAccount_Id(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.PATIENT_ACCOUNT_NOT_FOUND));
+                .orElseGet(() -> {
+                    PatientProfile profile = new PatientProfile();
+                    profile.setAccount(account);
+                    return profile;
+                });
 
-        Account account = patientProfile.getAccount();
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         String fullName = request.fullName().trim();
         if (fullName.length() < 4) {
@@ -54,6 +66,7 @@ public class PatientProfileService {
 
         account.setEmail(email);
         account.setPhone(request.phone());
+        patientProfileRepository.save(patientProfile);
     }
 
 

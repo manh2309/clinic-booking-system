@@ -12,21 +12,21 @@ import java.util.Optional;
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     boolean existsBySpecialty_IdAndActiveTrue(Long specialtyId);
 
-    @Query(value = "SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.active = true " +
+    @Query(value = "SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.active = true AND d.account.isActive = true AND d.specialty.active = true " +
             "AND (:specialtyId IS NULL OR d.specialty.id = :specialtyId) " +
             "AND (:keyword IS NULL OR LOWER(d.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))",
-            countQuery = "SELECT COUNT(d) FROM Doctor d WHERE d.active = true " +
+            countQuery = "SELECT COUNT(d) FROM Doctor d WHERE d.active = true AND d.account.isActive = true AND d.specialty.active = true " +
                     "AND (:specialtyId IS NULL OR d.specialty.id = :specialtyId) " +
                     "AND (:keyword IS NULL OR LOWER(d.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Doctor> search(@Param("specialtyId") Long specialtyId, @Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.id = :id AND d.active = true")
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.id = :id AND d.active = true AND d.account.isActive = true AND d.specialty.active = true")
     Optional<Doctor> findActiveByIdWithSpecialty(Long id);
 
-    Optional<Doctor> findByAccountIdAndActiveTrue(Long accountId);
+    Optional<Doctor> findByAccountId(Long accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT d FROM Doctor d WHERE d.account.id = :accountId AND d.active = true")
+    @Query("SELECT d FROM Doctor d WHERE d.account.id = :accountId")
     Optional<Doctor> lockByAccountId(Long accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

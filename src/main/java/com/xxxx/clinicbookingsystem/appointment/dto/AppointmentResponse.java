@@ -5,4 +5,4 @@ import java.time.LocalDateTime;
 
 public record AppointmentResponse(Long id, AppointmentStatus status, Long doctorId, String doctorName,
                                   Long patientAccountId, LocalDateTime startAt, LocalDateTime endAt,
-                                  String patientFullName, String patientPhone) {}
+                                  String patientFullName, String patientPhone, String statusReason) {}
