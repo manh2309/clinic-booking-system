@@ -59,6 +59,7 @@ class MedicalNotificationIntegrationTests {
     @Autowired MedicalRecordRepository records;
     @Autowired NotificationRepository notifications;
     @Autowired AppointmentService service;
+    @Autowired com.xxxx.clinicbookingsystem.appointment.visit.VisitRepository visits;
     @Autowired JwtService jwt;
     @MockitoSpyBean NotificationService notificationService;
     private static final String RESULT = """
@@ -263,7 +264,15 @@ class MedicalNotificationIntegrationTests {
     private Appointment appointment(Fixture f, AppointmentStatus status) {
         var a = new Appointment(); a.setPatient(f.patient()); a.setDoctor(f.doctor()); a.setStatus(status);
         var slot = slots.findById(f.slotId()).orElseThrow(); slot.setStatus(SlotStatus.BOOKED); slots.saveAndFlush(slot);
-        a.setSlot(slot); return appointments.saveAndFlush(a);
+        a.setSlot(slot); appointments.saveAndFlush(a);
+        if (status == AppointmentStatus.CONFIRMED && !slot.getStartAt().isAfter(now())) {
+            var visit = new com.xxxx.clinicbookingsystem.appointment.visit.ClinicVisit();
+            visit.setAppointment(a); visit.setStatus(com.xxxx.clinicbookingsystem.appointment.visit.ClinicVisit.Status.IN_PROGRESS);
+            visit.setActiveDoctorId(f.doctor().getId()); visit.setCheckedInBy(f.patient().getId());
+            visit.setCheckedInAt(slot.getStartAt()); visit.setStartedAt(slot.getStartAt()); visit.setPriorityAt(slot.getStartAt());
+            visits.saveAndFlush(visit);
+        }
+        return a;
     }
     private Account account(String role) {
         var a = new Account(); var name = UUID.randomUUID().toString(); a.setUsername(name); a.setEmail(name + "@test.com");

@@ -68,6 +68,7 @@ class AppointmentLifecycleIntegrationTests {
     @Autowired MockMvc mvc;
     @Autowired JwtService jwt;
     @Autowired JdbcTemplate jdbc;
+    @Autowired com.xxxx.clinicbookingsystem.appointment.visit.VisitService visits;
 
     @AfterEach void clearAuthentication() { SecurityContextHolder.clearContext(); }
 
@@ -106,6 +107,8 @@ class AppointmentLifecycleIntegrationTests {
         var appt = appointment(current, AppointmentStatus.CONFIRMED);
         authenticate(current.doctorAccount());
         expectStatusError(() -> service.updateStatus(appt.getId(), new UpdateAppointmentStatusRequest(AppointmentStatus.NO_SHOW)));
+        authenticate(account("ADMIN")); visits.checkIn(appt.getId());
+        authenticate(current.doctorAccount()); visits.start(appt.getId());
         assertThat(service.complete(appt.getId(), new com.xxxx.clinicbookingsystem.medical.dto.MedicalRecordRequest("Kết quả kiểm thử", null, null)).status())
                 .isEqualTo(AppointmentStatus.COMPLETED);
 

@@ -33,6 +33,7 @@ public class SchedulePlanningService  {
     private final NotificationService notifications;
     private final CurrentAccount current;
     private final Clock clock;
+    private final com.xxxx.clinicbookingsystem.appointment.visit.VisitService visitService;
     @Value("${clinic.schedules.horizon-days:30}") private int horizonDays;
     @Transactional(readOnly=true)
     public List<WeeklyResponse> weekly(Long doctorId)  {
@@ -211,6 +212,7 @@ public class SchedulePlanningService  {
             if(affected.stream().anyMatch(a->!a.getSlot().getStartAt().isAfter(now())))throw new AppException(ErrorCode.LEAVE_REVIEW_CONFLICT);
             if(!affected.isEmpty()&&!r.confirmCancellation())throw new AppException(ErrorCode.LEAVE_CANCELLATION_REQUIRED);
             for(var a:affected)  {
+                visitService.requireNotReceived(a.getId());
                 a.setStatus(AppointmentStatus.CANCELED);
                 a.setStatusReason("Bác sĩ nghỉ — "+r.reason().trim().substring(0,Math.min(480,r.reason().trim().length())));
                 a.getSlot().setStatus(SlotStatus.BLOCKED);

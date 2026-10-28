@@ -13,6 +13,7 @@ import com.xxxx.clinicbookingsystem.medical.repository.MedicalRecordRepository;
 import com.xxxx.clinicbookingsystem.notification.service.NotificationService;
 import static com.xxxx.clinicbookingsystem.notification.entity.NotificationType.*;
 import com.xxxx.clinicbookingsystem.appointment.entity.Appointment;
+import com.xxxx.clinicbookingsystem.appointment.visit.*;
 import com.xxxx.clinicbookingsystem.appointment.repository.AppointmentRepository;
 import com.xxxx.clinicbookingsystem.auth.security.CurrentAccount;
 import com.xxxx.clinicbookingsystem.common.enums.AppointmentStatus;
@@ -56,6 +57,8 @@ public class AppointmentService {
     private final com.xxxx.clinicbookingsystem.schedule.planning.DoctorLeaveRepository leaveRepository;
     private final MedicalRecordRepository medicalRecordRepository;
     private final NotificationService notificationService;
+    private final VisitService visitService;
+    private final VisitRepository visitRepository;
 
     @Transactional(readOnly = true)
     public DoctorAppointmentSummary doctorSummary() {
@@ -132,6 +135,7 @@ public class AppointmentService {
                 || !appointment.getSlot().getStartAt().isAfter(now())) {
             throw new AppException(ErrorCode.INVALID_APPOINTMENT_STATUS);
         }
+        visitService.requireNotReceived(id);
         appointment.setStatus(AppointmentStatus.CANCELED);
         appointment.setStatusReason("Bệnh nhân hủy lịch");
         releaseSlot(appointment);
@@ -169,6 +173,8 @@ public class AppointmentService {
         if (complete && !medicalRecordRepository.existsByAppointmentId(id)) {
             throw new AppException(ErrorCode.MEDICAL_RECORD_REQUIRED);
         }
+        if (noShow) visitService.requireNotReceived(id);
+        if (complete) visitService.complete(appointment);
         appointment.setStatus(request.status());
         if (complete) appointment.getSlot().setStatus(SlotStatus.BLOCKED);
         if (noShow) {
@@ -193,6 +199,7 @@ public class AppointmentService {
         if (request.diagnosis() == null || request.diagnosis().isBlank()
                 || request.diagnosis().length() > 5000) throw new AppException(ErrorCode.INVALID_REQUEST);
         if (medicalRecordRepository.existsByAppointmentId(id)) throw new AppException(ErrorCode.RESOURCE_CONFLICT);
+        visitService.complete(appointment);
         var record = new MedicalRecord();
         record.setAppointment(appointment);
         record.setDiagnosis(request.diagnosis().trim());
@@ -222,6 +229,7 @@ public class AppointmentService {
         if (!isOpen(appointment) || !appointment.getSlot().getStartAt().isAfter(now())) {
             throw new AppException(ErrorCode.INVALID_APPOINTMENT_STATUS);
         }
+        visitService.requireNotReceived(id);
         appointment.setStatus(AppointmentStatus.CANCELED);
         appointment.setStatusReason(reason(request));
         releaseSlot(appointment);
@@ -235,6 +243,7 @@ public class AppointmentService {
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED || now().isBefore(appointment.getSlot().getEndAt())) {
             throw new AppException(ErrorCode.INVALID_APPOINTMENT_STATUS);
         }
+        visitService.requireNotReceived(id);
         appointment.setStatus(AppointmentStatus.NO_SHOW);
         appointment.setStatusReason(reason(request));
         appointment.getSlot().setStatus(SlotStatus.BLOCKED);
@@ -303,12 +312,12 @@ public class AppointmentService {
                 .filter(name -> name != null && !name.isBlank())
                 .orElse(patient.getUsername());
 
-        return toResponse(appointment, patientFullName);
+        return toResponse(appointment, patientFullName, VisitService.summary(visitRepository.findByAppointmentId(appointment.getId()).orElse(null)));
     }
 
     private AppointmentResponse toResponse(
             Appointment appointment,
-            String patientFullName) {
+            String patientFullName, VisitDtos.Summary visit) {
 
         Account patient = appointment.getPatient();
 
@@ -322,7 +331,7 @@ public class AppointmentService {
                 appointment.getSlot().getEndAt(),
                 patientFullName,
                 patient.getPhone(),
-                appointment.getStatusReason()
+                appointment.getStatusReason(), visit
         );
     }
 
@@ -349,6 +358,9 @@ public class AppointmentService {
             }
         }
 
+        Map<Long, VisitDtos.Summary> visitSummaries = new HashMap<>();
+        if (!appointments.isEmpty()) visitRepository.findByAppointmentIdIn(appointments.getContent().stream().map(Appointment::getId).toList())
+                .forEach(v -> visitSummaries.put(v.getAppointment().getId(), VisitService.summary(v)));
         return PageResponse.from(appointments.map(appointment -> {
             Account patient = appointment.getPatient();
 
@@ -357,7 +369,7 @@ public class AppointmentService {
                     patient.getUsername()
             );
 
-            return toResponse(appointment, name);
+            return toResponse(appointment, name, visitSummaries.get(appointment.getId()));
         }));
     }
 }

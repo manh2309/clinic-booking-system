@@ -28,6 +28,13 @@ public class NotificationService {
             case APPOINTMENT_COMPLETED -> "Đã có kết quả khám";
             case APPOINTMENT_EXPIRED -> "Lịch khám đã hết hạn xác nhận";
             case APPOINTMENT_NO_SHOW -> "Đã ghi nhận vắng mặt";
+            case RESCHEDULE_PROPOSED -> "Có đề xuất đổi giờ khám, hãy mở lịch hẹn để phản hồi";
+            case RESCHEDULE_ACCEPTED -> "Bệnh nhân đã chấp nhận giờ khám mới";
+            case RESCHEDULE_DECLINED -> "Bệnh nhân đã từ chối đề xuất đổi giờ";
+            case RESCHEDULE_WITHDRAWN -> "Phòng khám đã rút đề xuất đổi giờ";
+            case VISIT_CHECKED_IN -> "Đã tiếp nhận bệnh nhân, chờ khám";
+            case VISIT_STARTED -> "Bác sĩ đã bắt đầu khám";
+            case VISIT_CANCELED -> "Đã rút tiếp nhận, kiểm tra lại lịch hẹn";
         };
         // Không đưa chẩn đoán vào thông báo; kết quả chỉ đọc qua luồng có kiểm tra chủ sở hữu.
         for (var recipient : java.util.List.of(appointment.getPatient(), appointment.getDoctor().getAccount())) {
