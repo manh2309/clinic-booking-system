@@ -9,6 +9,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -30,5 +32,26 @@ class SecurityIntegrationTests {
         mockMvc.perform(get("/api/v1/specialties"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(1000));
+    }
+
+    @Test
+    void doctorDirectoryIsPublic() throws Exception {
+        mockMvc.perform(get("/api/v1/doctors"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1000));
+    }
+
+    @Test
+    void anonymousCannotReadPrivateWorkspaces() throws Exception {
+        for (String path : new String[]{"/api/v1/doctors/me", "/api/v1/accounts/1", "/api/v1/patient/profile"}) {
+            mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test
+    void anonymousCannotBook() throws Exception {
+        mockMvc.perform(post("/api/v1/appointments")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"slotId\":1}"))
+                .andExpect(status().isUnauthorized());
     }
 }
