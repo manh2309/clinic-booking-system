@@ -29,8 +29,9 @@ public class DoctorAppointmentController {
     @GetMapping
     public ApiResponse<PageResponse<AppointmentResponse>> findAll(@RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @RequestParam(required = false) AppointmentStatus status) {
-        return ApiResponse.success(service.doctorAppointments(page, size, status));
+            @RequestParam(required = false) AppointmentStatus status,
+            @RequestParam(defaultValue="") String keyword,@RequestParam(required=false) java.time.LocalDate from,@RequestParam(required=false) java.time.LocalDate to) {
+        return ApiResponse.success(service.searchAppointments(true,page,size,status,null,keyword,from,to));
     }
 
     @PatchMapping("/{id}/status")

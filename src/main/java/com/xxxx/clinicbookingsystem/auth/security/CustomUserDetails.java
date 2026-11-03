@@ -14,6 +14,7 @@ public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final boolean enabled;
+    private final int tokenVersion;
     private final List<GrantedAuthority> authorities;
 
     public CustomUserDetails(Account account) {
@@ -21,6 +22,7 @@ public class CustomUserDetails implements UserDetails {
         this.username = account.getUsername();
         this.password = account.getPassword();
         this.enabled = Boolean.TRUE.equals(account.getIsActive());
+        this.tokenVersion = account.getTokenVersion();
 
         String roleName = account.getRole()
                 .getRoleName()
@@ -38,6 +40,7 @@ public class CustomUserDetails implements UserDetails {
     public Long getAccountId() {
         return accountId;
     }
+    public int getTokenVersion() { return tokenVersion; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

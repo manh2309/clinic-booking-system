@@ -27,10 +27,15 @@ public class JwtService {
     }
 
     public String generateToken(String username) {
+        return generateToken(username, 0);
+    }
+
+    public String generateToken(String username, int version) {
         Instant now = Instant.now();
 
         return Jwts.builder()
                 .subject(username)
+                .claim("ver", version)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMs)))
                 .signWith(getSigningKey())
@@ -48,8 +53,15 @@ public class JwtService {
         String username = extractUsername(token);
 
         return username.equals(userDetails.getUsername())
+                && (!(userDetails instanceof com.xxxx.clinicbookingsystem.auth.security.CustomUserDetails custom)
+                    || tokenVersion(token) == custom.getTokenVersion())
                 && !isTokenExpired(token)
                 && userDetails.isEnabled();
+    }
+
+    private int tokenVersion(String token) {
+        Number version = extractAllClaims(token).get("ver", Number.class);
+        return version == null ? 0 : version.intValue();
     }
 
     private boolean isTokenExpired(String token) {

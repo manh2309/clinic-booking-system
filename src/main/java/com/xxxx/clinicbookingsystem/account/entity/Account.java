@@ -26,6 +26,9 @@ public class Account extends BaseEntity {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
     @Column(name = "email", unique = true, length = 100)
     private String email;
 

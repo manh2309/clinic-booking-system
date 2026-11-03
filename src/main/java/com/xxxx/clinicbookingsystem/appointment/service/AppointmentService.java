@@ -45,6 +45,13 @@ import java.util.EnumMap;
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
+    @Transactional(readOnly=true)
+    public PageResponse<AppointmentResponse> searchAppointments(boolean own,int page,int size,AppointmentStatus status,Long doctorId,String keyword,java.time.LocalDate from,java.time.LocalDate to) {
+        if(page<0||size<1||size>100||keyword.length()>100||from!=null&&to!=null&&from.isAfter(to))throw new AppException(ErrorCode.INVALID_REQUEST);
+        Long selected=own?doctorService.getByAccountId(currentAccount.id()).getId():doctorId;
+        String q="%"+keyword.trim().toLowerCase(java.util.Locale.ROOT).replace("!","!!").replace("%","!%").replace("_","!_")+"%";
+        return toPageResponse(repository.searchFiltered(selected,status,from==null?null:from.atStartOfDay(),to==null?null:to.plusDays(1).atStartOfDay(),q,pageable(page,size)));
+    }
     private final AppointmentRepository repository;
     private final ScheduleSlotRepository slotRepository;
     private final AccountRepository accountRepository;

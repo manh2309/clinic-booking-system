@@ -25,8 +25,9 @@ public class AdminAppointmentController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) AppointmentStatus status,
-            @RequestParam(required = false) Long doctorId) {
-        return ApiResponse.success(service.adminAppointments(page, size, status, doctorId));
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(defaultValue="") String keyword,@RequestParam(required=false) java.time.LocalDate from,@RequestParam(required=false) java.time.LocalDate to) {
+        return ApiResponse.success(service.searchAppointments(false,page,size,status,doctorId,keyword,from,to));
     }
 
     @PatchMapping("/{id}/cancel")

@@ -84,7 +84,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if(!Boolean.TRUE.equals(account.getIsActive())) {
             throw new AppException(ErrorCode.ACCOUNT_INACTIVE);
         }
-        String accessToken = jwtService.generateToken(account.getUsername());
+        String accessToken = jwtService.generateToken(account.getUsername(), account.getTokenVersion());
 
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)

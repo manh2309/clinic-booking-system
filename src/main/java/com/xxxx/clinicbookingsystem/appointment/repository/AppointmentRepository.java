@@ -12,6 +12,11 @@ import java.util.List;
 import java.time.LocalDateTime;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+    @Query("select a from Appointment a where (:doctorId is null or a.doctor.id=:doctorId) and (:status is null or a.status=:status) " +
+            "and (:from is null or a.slot.startAt>=:from) and (:until is null or a.slot.startAt<:until) and " +
+            "(lower(a.patient.username) like :q escape '!' or coalesce(a.patient.phone,'') like :q escape '!' or lower(a.doctor.fullName) like :q escape '!' " +
+            "or cast(a.id as string) like :q escape '!' or exists (select p from PatientProfile p where p.account.id=a.patient.id and lower(p.fullName) like :q escape '!'))")
+    Page<Appointment> searchFiltered(Long doctorId, AppointmentStatus status, LocalDateTime from, LocalDateTime until, String q, Pageable pageable);
     @Query("select distinct a.patient.id from Appointment a where a.doctor.id=:doctorId and a.status in ('PENDING','CONFIRMED') and a.slot.startAt<:endAt and a.slot.endAt>:startAt")
     List<Long> affectedPatientIds(Long doctorId, LocalDateTime startAt, LocalDateTime endAt);
 
