@@ -23,19 +23,19 @@ public class AdminDirectoryController {
     private final EntityManager em;
     @GetMapping("/accounts")
     public ApiResponse<PageResponse<AccountResponse>> accounts(@RequestParam(defaultValue="") @Size(max=100) String keyword,
-            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="10") @Min(1) @Max(100) int size) {
         return result("Account","a","(lower(a.username) like :q escape '!' or lower(coalesce(a.email,'')) like :q escape '!' or coalesce(a.phone,'') like :q escape '!')", "a.isActive",Account.class,
                 a->new AccountResponse(a.getId(),a.getUsername(),a.getEmail(),a.getRole().getRoleName(),a.getIsActive()),keyword,active,page,size);
     }
     @GetMapping("/doctors")
     public ApiResponse<PageResponse<DoctorResponse>> doctors(@RequestParam(defaultValue="") @Size(max=100) String keyword,
-            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="10") @Min(1) @Max(100) int size) {
         return result("Doctor","d","(lower(d.fullName) like :q escape '!' or lower(d.specialty.name) like :q escape '!')","d.active",Doctor.class,
                 d->new DoctorResponse(d.getId(),d.getFullName(),d.getQualification(),d.getDescription(),d.getSpecialty().getId(),d.getSpecialty().getName(),d.getActive()),keyword,active,page,size);
     }
     @GetMapping("/specialties")
     public ApiResponse<PageResponse<SpecialtyResponse>> specialties(@RequestParam(defaultValue="") @Size(max=100) String keyword,
-            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+            @RequestParam(required=false) Boolean active,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="10") @Min(1) @Max(100) int size) {
         return result("Specialty","s","lower(s.name) like :q escape '!'","s.active",Specialty.class,
                 s->new SpecialtyResponse(s.getId(),s.getName(),s.getDescription(),s.getActive()),keyword,active,page,size);
     }

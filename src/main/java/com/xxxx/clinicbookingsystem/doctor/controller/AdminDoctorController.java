@@ -40,7 +40,7 @@ public class AdminDoctorController {
     @GetMapping
     public ApiResponse<PageResponse<DoctorResponse>> findAllForAdmin(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) int size
+            @RequestParam(defaultValue = "10") @Min(1) int size
     ) {
         return ApiResponse.success(service.findAllForAdmin(page, size));
     }

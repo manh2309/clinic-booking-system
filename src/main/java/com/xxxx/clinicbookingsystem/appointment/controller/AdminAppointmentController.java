@@ -23,7 +23,7 @@ public class AdminAppointmentController {
     @GetMapping
     public ApiResponse<PageResponse<AppointmentResponse>> list(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(required = false) AppointmentStatus status,
             @RequestParam(required = false) Long doctorId,
             @RequestParam(defaultValue="") String keyword,@RequestParam(required=false) java.time.LocalDate from,@RequestParam(required=false) java.time.LocalDate to) {

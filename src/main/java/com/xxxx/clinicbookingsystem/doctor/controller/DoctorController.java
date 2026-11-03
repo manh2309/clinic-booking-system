@@ -28,7 +28,7 @@ public class DoctorController {
     @GetMapping
     public ApiResponse<PageResponse<DoctorResponse>> search(@RequestParam(required = false) Long specialtyId,
             @RequestParam(required = false) String keyword, @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         return ApiResponse.success(service.search(specialtyId, keyword, page, size));
     }
 

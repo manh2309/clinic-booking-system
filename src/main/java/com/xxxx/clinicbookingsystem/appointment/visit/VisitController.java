@@ -23,12 +23,12 @@ public class VisitController {
     public ApiResponse<VisitDtos.Response> start(@PathVariable Long id) { return ApiResponse.success(service.start(id)); }
     @GetMapping("/admin/queue") @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<VisitDtos.Board> adminBoard(@RequestParam @Positive Long doctorId, @RequestParam(required=false) LocalDate date,
-            @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="10") @Min(1) @Max(100) int size) {
         return ApiResponse.success(service.board(doctorId, date, page, size, false));
     }
     @GetMapping("/doctors/me/queue") @PreAuthorize("hasRole('DOCTOR')")
     public ApiResponse<VisitDtos.Board> doctorBoard(@RequestParam(required=false) LocalDate date,
-            @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="10") @Min(1) @Max(100) int size) {
         return ApiResponse.success(service.board(null, date, page, size, true));
     }
 }
